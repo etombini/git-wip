@@ -27,7 +27,7 @@ Usage: git wip [get|push]
   remotes/origin/wip-1492044696
 ```
 
-Note: all previous WIP (`remotes/origin/wip-... `) stored on the server are deleted
+Note: all previous WIP (`remotes/origin/wip-... `) stored on the remote server are deleted, local WIP is kept to allow rebasing.
 
 ## Getting Last Version Of Work In Progress
 
