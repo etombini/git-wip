@@ -18,11 +18,6 @@ function git_wip_push() {
     for remote_wip in $remote_wips; do
         git push origin :$remote_wip
     done
-
-    local local_wips=`git branch |grep -o "wip-.*" |grep -v $branch`
-    for local_wip in $local_wips; do
-        git branch -d $local_wip
-    done
     return 0
 }
 
