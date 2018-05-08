@@ -9,7 +9,7 @@ function usage() {
 function git_wip_push() {
     git fetch --prune
     local branch
-    branch=wip-$(date +%s)
+    branch=wip-$(date +"%Y-%m-%dT%H-%M-%S")
 
     git checkout -b "$branch"
     git add -A
