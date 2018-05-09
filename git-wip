@@ -20,6 +20,7 @@ function git_wip_push() {
     remote_wips=$(git branch -r |grep -o "wip-.*" |grep -v "$branch")
     for remote_wip in $remote_wips; do
         git push origin :"$remote_wip"
+        git branch -d "$remote_wip"
     done
     return 0
 }
