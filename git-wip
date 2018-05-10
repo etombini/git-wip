@@ -2,25 +2,44 @@
 
 
 function usage() {
-    echo "Usage: git wip [get|push]"
+    echo "Usage: git wip get|push [remote]"
     return 0
 }
 
 function git_wip_push() {
     git fetch --prune
+    local remote
+    remote=${1:-origin}
     local branch
     branch=wip-$(date +"%Y-%m-%dT%H-%M-%S")
 
-    git checkout -b "$branch"
-    git add -A
-    git commit -m "$branch"
-    git push -u origin "$branch"
+    if ! git checkout -b "$branch"; then
+        >&2 echo "ERROR: can not checkout branch $branch"
+        exit 1
+    fi 
+    if ! git add -A; then
+        >&2 echo "ERROR: can not add file to index"
+        exit 1
+    fi
+    if ! git commit -m "$branch"; then
+        >&2 echo "ERROR: can not commit"
+        exit 1
+    fi
+
+    if ! git push -u "$remote" "$branch"; then
+        >&2 echo "ERROR: can not push branch $branch to remote $remote"
+        exit 1
+    fi
 
     local remote_wips
-    remote_wips=$(git branch -r |grep -o "wip-.*" |grep -v "$branch")
+    remote_wips=$(git branch -r | grep "$remote" |grep -o "wip-.*" |grep -v "$branch")
     for remote_wip in $remote_wips; do
-        git push origin :"$remote_wip"
-        git branch -d "$remote_wip"
+        if ! git push "$remote" :"$remote_wip"; then
+            >&2 echo "ERROR: can not delete branch $remote_wip from $remote"
+        fi
+        if ! git branch -d "$remote_wip"; then
+            >&2 echo "ERROR: can not delete local branch $remote_wip"
+        fi
     done
     return 0
 }
@@ -33,8 +52,6 @@ function git_wip_get() {
     return 0
 }
 
-
-
 if [ $# -lt 1 ]; then
     usage
     exit 1
@@ -42,12 +59,12 @@ fi
 
 
 if [ "$1" == "get" ]; then
-    git_wip_get
+    git_wip_get "$2"
     exit 0
 fi
 
 if [ "$1" == "push" ]; then
-    git_wip_push
+    git_wip_push "$2"
     exit 0
 fi
 
