@@ -18,13 +18,11 @@ function git_wip_push() {
         exit 1
     fi 
     if ! git add -A; then
-        >&2 echo "ERROR: can not add file to index"
+        >&2 echo "ERROR: can not add files to index"
         exit 1
     fi
-    if ! git commit -m "$branch"; then
-        >&2 echo "ERROR: can not commit"
-        exit 1
-    fi
+    
+    git commit -m "$branch"
 
     if ! git push -u "$remote" "$branch"; then
         >&2 echo "ERROR: can not push branch $branch to remote $remote"
