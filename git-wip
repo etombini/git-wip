@@ -1,73 +1,37 @@
 #! /bin/bash
 
-
 function usage() {
-    echo "Usage: git wip get|push [remote]"
+    echo "Usage:"
+    echo "       git wip          checkout to a wip branch (if needed) and commit modified files"
     return 0
 }
 
-function git_wip_push() {
-    git fetch --prune
-    local remote
-    remote=${1:-origin}
-    local branch
-    branch=wip-$(date +"%Y-%m-%dT%H-%M-%S")
+default_prefix="wip/"
 
-    if ! git checkout -b "$branch"; then
-        >&2 echo "ERROR: can not checkout branch $branch"
-        exit 1
-    fi 
-    if ! git add -A; then
-        >&2 echo "ERROR: can not add files to index"
-        exit 1
-    fi
-    
-    git commit -m "$branch"
+function git_wip() {
+    local current_branch
+    current_branch=$(git branch --show-current)
 
-    if ! git push -u "$remote" "$branch"; then
-        >&2 echo "ERROR: can not push branch $branch to remote $remote"
-        exit 1
-    fi
-
-    local remote_wips
-    remote_wips=$(git branch -r | grep "$remote" |grep -o "wip-.*" |grep -v "$branch")
-    for remote_wip in $remote_wips; do
-        if ! git push "$remote" :"$remote_wip"; then
-            >&2 echo "ERROR: can not delete branch $remote_wip from $remote"
+    # If already in a "wip/..." branch, just commit and we are done.
+    # If a corresponding "wip/..." branch already exists, fail and ask for
+    # switching/cleaning
+    if [[ ! $current_branch == wip\/* ]]; then
+        if ! git branch "$default_prefix$current_branch"; then
+            >&2 echo "ERROR: can not create branch $default_prefix$current_branch"
+            exit 1
         fi
-        if ! git branch -d "$remote_wip"; then
-            >&2 echo "ERROR: can not delete local branch $remote_wip"
+        if ! git switch "$default_prefix$current_branch"; then
+            >&2 echo "ERROR: can not switch to branch $default_prefix$current_branch"
+            exit 1
         fi
+    fi
+    for f in $(git add -A -n | awk '{print $2}'); do
+        f="${f%\'}"
+        f="${f#\'}"
+        git add "$f" 
+        git commit -m "[wip] $f"
     done
-    return 0
 }
 
-function git_wip_get() {
-    git fetch --prune
-    local last_remote_wip
-    last_remote_wip=$(git branch -r |grep -o "wip-.*" | tail -1 | sed -e 's#remotes/origin/##')
-    git checkout "$last_remote_wip"
-    return 0
-}
-
-if [ $# -lt 1 ]; then
-    usage
-    exit 1
-fi
-
-
-if [ "$1" == "get" ]; then
-    git_wip_get "$2"
-    exit 0
-fi
-
-if [ "$1" == "push" ]; then
-    git_wip_push "$2"
-    exit 0
-fi
-
->&2 echo "git wip: Illegal option $1"
-usage
-exit 1
-
+git_wip
 
